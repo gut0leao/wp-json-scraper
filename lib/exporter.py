@@ -29,6 +29,8 @@ from datetime import datetime
 from urllib import parse as urlparse
 import mimetypes
 import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from lib.console import Console
 from lib.utils import get_by_id, print_progress_bar
@@ -51,7 +53,7 @@ class Exporter:
     """
 
     @staticmethod
-    def download_media(media, output_folder, slugs=None):
+    def download_media(media, output_folder, slugs=None, ignore_ssl_verify=False):
         """
             Downloads the media files based on the given URLs
             
@@ -64,7 +66,7 @@ class Exporter:
         media_length = len(media)
         progress = 0
         for m in media:
-            r = requests.get(m, stream=True)
+            r = requests.get(m, stream=True, verify=not ignore_ssl_verify)
             if r.status_code == 200:
                 http_path = urlparse.urlparse(m).path.split("/")
                 local_path = output_folder

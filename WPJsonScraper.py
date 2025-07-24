@@ -115,6 +115,18 @@ license, check LICENSE.txt for more information""")
                         dest='comment_export_folder',
                         action='store',
                         help='export comments to a specified destination folder')
+    parser.add_argument('--export-categories',
+                        dest='categories_export_file',
+                        action='store',
+                        help='export categories to a specified file')
+    parser.add_argument('--export-tags',
+                        dest='tags_export_file',
+                        action='store',
+                        help='export tags to a specified file')
+    parser.add_argument('--export-users',
+                        dest='users_export_file',
+                        action='store',
+                        help='export users to a specified file')    
     parser.add_argument('--download-media',
                         dest='media_folder',
                         action='store',
@@ -161,6 +173,10 @@ license, check LICENSE.txt for more information""")
                         dest='interactive',
                         action='store_true',
                         help='start an interactive session')
+    parser.add_argument('--ignore-ssl-verify',
+                        dest='ignore_ssl_verify',
+                        action='store_true',
+                        help='Disable SSL certificate verification (Default is false)')
 
 
     args = parser.parse_args()
@@ -213,7 +229,7 @@ license, check LICENSE.txt for more information""")
             authorization = (authorization_list[0],
               ':'.join(authorization_list[1:]))
     session = RequestSession(proxy=proxy, cookies=cookies,
-      authorization=authorization)
+      authorization=authorization, ignore_ssl_verify=args.ignore_ssl_verify)
     try:
         session.get(target)
         Console.log_success("Connection OK")
@@ -243,101 +259,134 @@ license, check LICENSE.txt for more information""")
             basic_info = scanner.get_basic_info()
             Console.log_info("General information on the target")
             InfoDisplayer.display_basic_info(basic_info)
+            Exporter.export_posts([basic_info], Exporter.JSON, "./output/info.json")
         except NoWordpressApi:
             Console.log_error("No WordPress API available at the given URL "
             "(too old WordPress or not WordPress?)")
             exit()
     
-    if args.posts or args.all:
-        try:
-            if args.comments:
-                Console.log_info("Post list with comments")
-            else:
-                Console.log_info("Post list")
-            posts_list = scanner.get_posts(args.comments)
-            InfoDisplayer.display_posts(posts_list, scanner.get_orphans_comments())
-        except WordPressApiNotV2:
-            Console.log_error("The API does not support WP V2")
+    # if args.posts or args.all:
+    #     try:
+    #         if args.comments:
+    #             Console.log_info("Post list with comments")
+    #         else:
+    #             Console.log_info("Post list")
+    #         posts_list = scanner.get_posts(args.comments)
+    #         InfoDisplayer.display_posts(posts_list, scanner.get_orphans_comments())
+    #     except WordPressApiNotV2:
+    #         Console.log_error("The API does not support WP V2")
 
-    if args.pages or args.all:
-        try:
-            Console.log_info("Page list")
-            pages_list = scanner.get_pages()
-            InfoDisplayer.display_pages(pages_list)
-        except WordPressApiNotV2:
-            Console.log_error("The API does not support WP V2")
+    # if args.pages or args.all:
+    #     try:
+    #         Console.log_info("Page list")
+    #         pages_list = scanner.get_pages()
+    #         InfoDisplayer.display_pages(pages_list)
+    #     except WordPressApiNotV2:
+    #         Console.log_error("The API does not support WP V2")
 
-    if args.users or args.all:
-        try:
-            Console.log_info("User list")
-            users_list = scanner.get_users()
-            InfoDisplayer.display_users(users_list)
-        except WordPressApiNotV2:
-            Console.log_error("The API does not support WP V2")
+    # if args.users or args.all:
+    #     try:
+    #         Console.log_info("User list")
+    #         users_list = scanner.get_users()
+    #         InfoDisplayer.display_users(users_list)
+    #     except WordPressApiNotV2:
+    #         Console.log_error("The API does not support WP V2")
 
-    if args.endpoints or args.all:
-        try:
-            Console.log_info("API endpoints")
-            basic_info = scanner.get_basic_info()
-            InfoDisplayer.display_endpoints(basic_info)
-        except NoWordpressApi:
-            Console.log_error("No WordPress API available at the given URL "
-            "(too old WordPress or not WordPress?)")
-            exit()
+    # if args.endpoints or args.all:
+    #     try:
+    #         Console.log_info("API endpoints")
+    #         basic_info = scanner.get_basic_info()
+    #         InfoDisplayer.display_endpoints(basic_info)
+    #     except NoWordpressApi:
+    #         Console.log_error("No WordPress API available at the given URL "
+    #         "(too old WordPress or not WordPress?)")
+    #         exit()
 
-    if args.categories or args.all:
+    # if args.categories or args.all:
+    #     try:
+    #         Console.log_info("Category list")
+    #         categories_list = scanner.get_categories()
+    #         InfoDisplayer.display_categories(categories_list)
+    #     except WordPressApiNotV2:
+    #         Console.log_error("The API does not support WP V2")
+
+    # if args.tags or args.all:
+    #     try:
+    #         Console.log_info("Tags list")
+    #         tags_list = scanner.get_tags()
+    #         InfoDisplayer.display_tags(tags_list)
+    #     except WordPressApiNotV2:
+    #         Console.log_error("The API does not support WP V2")
+
+    # media_list = None
+    # if args.media or args.all:
+    #     try:
+    #         Console.log_info("Media list")
+    #         media_list = scanner.get_media()
+    #         InfoDisplayer.display_media(media_list)
+    #     except WordPressApiNotV2:
+    #         Console.log_error("The API does not support WP V2")
+
+    # if args.crawl_ns is None and args.all:
+    #     args.crawl_ns = "all"
+
+    # if args.crawl_ns is not None:
+    #     try:
+    #         if args.crawl_ns == "all":
+    #             Console.log_info("Crawling all namespaces")
+    #         else:
+    #             Console.log_info("Crawling %s namespace" % args.crawl_ns)
+    #         ns_data = scanner.crawl_namespaces(args.crawl_ns)
+    #         InfoDisplayer.display_crawled_ns(ns_data)
+    #     except NSNotFoundException:
+    #         Console.log_error("The specified namespace was not found")
+    #     except Exception as e:
+    #         print(e)
+
+    categories_list = None;
+    if args.categories_export_file is not None:
         try:
-            Console.log_info("Category list")
             categories_list = scanner.get_categories()
-            InfoDisplayer.display_categories(categories_list)
+            number = Exporter.export_categories(categories_list, Exporter.JSON, args.categories_export_file)
+            if number > 0:
+                Console.log_success("Exported %d categories to %s" % (number, args.categories_export_file))
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 
-    if args.tags or args.all:
+    tags_list = None;
+    if args.tags_export_file is not None:
         try:
-            Console.log_info("Tags list")
             tags_list = scanner.get_tags()
-            InfoDisplayer.display_tags(tags_list)
+            number = Exporter.export_tags(tags_list, Exporter.JSON, args.tags_export_file)
+            if number > 0:
+                Console.log_success("Exported %d tags to %s" % (number, args.tags_export_file))
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
 
-    media_list = None
-    if args.media or args.all:
+    users_list = None
+    if args.users_export_file is not None:
         try:
-            Console.log_info("Media list")
-            media_list = scanner.get_media()
-            InfoDisplayer.display_media(media_list)
+            users_list = scanner.get_users()
+            number = Exporter.export_users(users_list, Exporter.JSON, args.users_export_file)
+            if number > 0:
+                Console.log_success("Exported %d users to %s" % (number, args.users_export_file))
         except WordPressApiNotV2:
             Console.log_error("The API does not support WP V2")
-
-    if args.crawl_ns is None and args.all:
-        args.crawl_ns = "all"
-
-    if args.crawl_ns is not None:
-        try:
-            if args.crawl_ns == "all":
-                Console.log_info("Crawling all namespaces")
-            else:
-                Console.log_info("Crawling %s namespace" % args.crawl_ns)
-            ns_data = scanner.crawl_namespaces(args.crawl_ns)
-            InfoDisplayer.display_crawled_ns(ns_data)
-        except NSNotFoundException:
-            Console.log_error("The specified namespace was not found")
-        except Exception as e:
-            print(e)
 
     if args.post_export_folder is not None:
         try:
             posts_list = scanner.get_posts()
-            tags_list = scanner.get_tags()
-            categories_list = scanner.get_categories()
-            users_list = scanner.get_users()
+            # tags_list = scanner.get_tags()
+            # categories_list = scanner.get_categories()
+            # users_list = scanner.get_users()
             print()
             post_number = Exporter.export_posts_html(posts_list,
              args.post_export_folder,
              tags_list,
              categories_list,
              users_list)
+            # exporta o posts.json
+            Exporter.export_posts(posts_list, Exporter.JSON, args.post_export_folder)
             if post_number> 0:
                 Console.log_success("Exported %d posts to %s" %
                 (post_number, args.post_export_folder))
@@ -354,6 +403,8 @@ license, check LICENSE.txt for more information""")
              None,
              None,
              users_list)
+            # export pages.json
+            Exporter.export_pages(pages_list, Exporter.JSON, args.page_export_folder)
             if page_number> 0:
                 Console.log_success("Exported %d pages to %s" %
                 (page_number, args.page_export_folder))
@@ -378,17 +429,17 @@ license, check LICENSE.txt for more information""")
             Console.log_error("The destination is not a folder or does not exist")
         else:
             print("Pulling the media URLs")
-
-            media, _ = scanner.get_media_urls('all', True)
+            # export medias.json
+            media_list = scanner.get_media()
+            Exporter.export_media(media_list, Exporter.JSON, args.media_folder)
+            media, _ = scanner.get_media_urls('all', True, media_list)
             if len(media) == 0:
                 Console.log_error("No media found")
                 return
             print("%d media URLs found" % len(media))
-
             print("Note: Only files over 10MB are logged here")
-            number_downloaded = Exporter.download_media(media, args.media_folder)
+            number_downloaded = Exporter.download_media(media, args.media_folder, ignore_ssl_verify=args.ignore_ssl_verify)
             Console.log_success('Downloaded %d media to %s' % (number_downloaded, args.media_folder))
-
 
 if __name__ == "__main__":
     main()

@@ -464,26 +464,29 @@ class WPApi:
         self.media = self.update_cache(self.media, media, total_entries, start, num)
         return media
     
-    def get_media_urls(self, ids, cache=True):
+    def get_media_urls(self, ids, cache=True, media_list=None):
         """
         Retrieves the media download URLs for specified IDs or all or from cache
         """
-        media = []
-        if ids == 'all':
-            media = self.get_media(force=(not cache))
-        elif ids == 'cache':
-            media = self.get_from_cache(self.media, force=(not cache))
+        if media_list is not None:
+         media = media_list
         else:
-            id_list = ids.split(',')
             media = []
-            for i in id_list:
-                try:
-                    if int(i) > 0:
-                        m = self.get_obj_by_id(WPApi.MEDIA, int(i), cache)
-                        if m is not None and len(m) > 0 and type(m[0]) is dict:
-                            media.append(m[0])
-                except ValueError:
-                    pass
+            if ids == 'all':
+                media = self.get_media(force=(not cache))
+            elif ids == 'cache':
+                media = self.get_from_cache(self.media, force=(not cache))
+            else:
+                id_list = ids.split(',')
+                media = []
+                for i in id_list:
+                    try:
+                        if int(i) > 0:
+                            m = self.get_obj_by_id(WPApi.MEDIA, int(i), cache)
+                            if m is not None and len(m) > 0 and type(m[0]) is dict:
+                                media.append(m[0])
+                    except ValueError:
+                        pass
         urls = []
         slugs = []
         if media is None:
